@@ -1,15 +1,15 @@
 #!/bin/bash
+# Zimbra Backup Script
+# This script is intended to run from the crontab as root
+# Guillaume Roche - 2013
+
 VAR_CLIENT="BHC"
 VAR_SRCTITLE="Zimbra"
 VAR_TYPE="Locale"
 VAR_START_HOUR=`/bin/date +%H:%M`
 VAR_MAILFROM="backup@bh-consulting.net"
 VAR_MAILRCPT="backup@bh-consulting.net"
-# Zimbra Backup Script
-# Requires ncftp to run
-# This script is intended to run from the crontab as root
-# Date outputs and su vs sudo corrections by other contributors, thanks, sorry I don't have names to attribute!
-# Free to use and free of any warranty!  Daniel W. Martin, 5 Dec 2008
+
 ECHO=/bin/echo
 CAT=/bin/cat
 MAIL=/usr/sbin/sendmail
@@ -33,19 +33,10 @@ LOG=$PWD"/logs/"`$DATE +%F_%X`".log"
 echo Time backup started = $(date +%T) > $LOG
 before="$(date +%s)"
 
-# Live sync before stopping Zimbra to minimize sync time with the services down
-# Comment out the following line if you want to try single cold-sync only
 $ECHO "-----------DEBUT------------" >> $LOG
 $ECHO `$DATE` >> $LOG
 $ECHO "-----------------------------" >> $LOG
 rsync -avHK --exclude 'data/ldap/mdb/db' --delete /opt/zimbra 10.254.20.200::zimbra  >> $LOG 2>> $LOG
-
-# which is the same as: /opt/zimbra /backup 
-# Including --delete option gets rid of files in the dest folder that don't exist at the src 
-# this prevents logfile/extraneous bloat from building up overtime.
-
-# Now we need to shut down Zimbra to rsync any files that were/are locked
-# whilst backing up when the server was up and running.
 
 # Notify all connected users
 su - zimbra  -c"zxsuite  chat broadcastMessage 'Coupure du Zimbra dans 1 min'" >> $LOG
@@ -61,10 +52,6 @@ sleep 15
 # Kill any orphaned Zimbra processes
 ORPHANED=`ps -u zimbra -o "pid="` && kill -9 $ORPHANED
 
-# Only enable the following command if you need all Zimbra user owned
-# processes to be killed before syncing
-# ps auxww | awk '{print $1" "$2}' | grep zimbra | kill -9 `awk '{print $2}'`
- 
 # Sync to backup directory
 rsync -avHK --stats --exclude 'data/ldap/mdb/db' --delete /opt/zimbra 10.254.20.200::zimbra >> $LOG 2>> $LOG
 su - zimbra -c"rm -rf /home/tech/NFS/opt/zimbra/data/ldap/mdb/db/*"
@@ -95,25 +82,10 @@ minutes=$(($elapsed / 60))
 seconds=$(($elapsed - $minutes * 60))
 echo Server was down for: "$hours hours $minutes minutes $seconds seconds"  >> $LOG
 
-# Create a txt file in the backup directory that'll contains the current Zimbra
-# server version. Handy for knowing what version of Zimbra a backup can be restored to.
-#su - zimbra -c "zmcontrol -v > /backup/zimbra/conf/zimbra_version.txt"
-# or examine your /opt/zimbra/.install_history
-
 # Display Zimbra services status
 echo Displaying Zimbra services status...  >> $LOG
 su - zimbra -c "/opt/zimbra/bin/zmcontrol status"  >> $LOG
  
-# Create archive of backed-up directory for offsite transfer
-# cd /backup/zimbra
-#umask 0177
-#tar -zcvf /tmp/mail.backup.tgz -C /backup/zimbra .
- 
-# Transfer file to backup server
-#ncftpput -u <username> -p <password> <ftpserver> /<desired dest. directory> /tmp/mail.backup.tgz
-
-#rm /tmp/mail.backup.tgz
-
 # Outputs the time the backup finished
 echo Time backup finished = $(date +%T)
 
