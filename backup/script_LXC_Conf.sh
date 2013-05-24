@@ -19,13 +19,12 @@ TIMEDATE=`$DATE +%F`
 MSG=/tmp/mail.txt
 
 
-#PATH_LXC=/var/lib/lxc
-PATH_LXC=/home/guigui/projets/scripts/
+PATH_LXC=/var/lib/lxc
 
 function backup_etc {
   PATH=$PATH_LXC$1/rootfs/etc
   echo $PATH
-  #$TAR czvf /tmp/conf_$TIMEDATE_$1.tar.gz $PATH > /dev/null 2> /dev/null
+  $TAR czvf /tmp/conf_$TIMEDATE_$1.tar.gz $PATH > /dev/null 2> /dev/null
 }
 
 
@@ -54,13 +53,14 @@ function mail_join {
   $ECHO "--idalacon--" >> $MSG
 }
 
-mail_main
-for inode in $(ls)
+#mail_main
+for inode in /home/guigui/*
 do
   if [ -d $inode ]; then
-    backup_etc $inode
-    mail_join $inode
+    echo $inode |rev |cut -d"/" -f1 |rev
+    #backup_etc $inode
+    #mail_join $inode
   fi
 done
-$MAIL $VAR_MAILRCPT < $MSG
+#$MAIL $VAR_MAILRCPT < $MSG
 
