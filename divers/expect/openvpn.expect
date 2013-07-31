@@ -1,8 +1,10 @@
 #!/usr/bin/expect
-set config [lindex $argv 0]
-set username [lindex $argv 1]
-set password [lindex $argv 2]
-spawn sudo openvpn $config
+set dir [lindex $argv 0]
+set config [lindex $argv 1]
+set username [lindex $argv 2]
+set password [lindex $argv 3]
+cd $dir
+spawn openvpn $config
 expect "Enter Auth Username:"
 send "$username\n"
 expect "Enter Auth Password:"
